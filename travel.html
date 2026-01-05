@@ -991,15 +991,30 @@
     // --- 複製圖片到剪貼簿功能 ---
     async function copyImage() {
         const imageUrl = 'https://ckd38.github.io/work/Protection%20Summary.png';
+        const btn = document.querySelector('.header-btn[onclick="copyImage()"]');
+        const originalText = btn.innerHTML;
         
+        // 檢查環境是否支援 Clipboard API (通常需要 HTTPS)
+        if (!navigator.clipboard) {
+            alert('❌ 無法使用自動複製功能\n\n因為瀏覽器安全限制，此功能僅在 HTTPS 加密網站下支援。\n\n建議您：\n1. 點擊「確定」後會在新視窗開啟圖片\n2. 請長按圖片或右鍵另存新檔');
+            window.open(imageUrl, '_blank');
+            return;
+        }
+
         try {
-            // 提示使用者
-            const btn = document.querySelector('.header-btn[onclick="copyImage()"]');
-            const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中';
             
-            // 抓取圖片
-            const response = await fetch(imageUrl);
+            // 抓取圖片 (增加 mode: cors 設定)
+            const response = await fetch(imageUrl, {
+                method: 'GET',
+                credentials: 'omit', // 避免跨域憑證問題
+                mode: 'cors'         // 確保跨域請求
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
             const blob = await response.blob();
             
             // 寫入剪貼簿
@@ -1009,18 +1024,16 @@
                 })
             ]);
             
-            alert('複製成功');
-            
-            // 復原按鈕
-            btn.innerHTML = originalText;
+            alert('✅ 複製成功！\n\n圖卡已儲存到您的剪貼簿，\n請直接到 LINE 對話框長按貼上。');
             
         } catch (err) {
             console.error('Copy failed', err);
-            alert('複製失敗，請確認您的瀏覽器支援此功能。');
+            alert('⚠️ 自動複製失敗\n\n原因可能是瀏覽器版本過舊或安全限制阻擋。\n\n系統將為您開啟圖片，請您手動長按儲存。');
+            window.open(imageUrl, '_blank');
             
+        } finally {
             // 復原按鈕
-            const btn = document.querySelector('.header-btn[onclick="copyImage()"]');
-            btn.innerHTML = '<i class="fas fa-copy"></i> 複製保障';
+            btn.innerHTML = originalText;
         }
     }
 

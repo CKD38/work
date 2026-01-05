@@ -39,12 +39,15 @@
         header {
             background-color: var(--primary);
             color: var(--white);
-            padding: 15px 20px;
-            text-align: center;
+            padding: 10px 20px; /* 微調 padding 以容納兩個按鈕 */
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 100;
+            /* Flex layout for button */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         header h1 {
@@ -58,6 +61,37 @@
             margin: 4px 0 0;
             font-size: 0.85rem;
             opacity: 0.9;
+        }
+
+        /* Header Right Actions */
+        .header-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px; /* 按鈕間距 */
+        }
+
+        .header-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            white-space: nowrap;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            width: 100px; /* 固定寬度讓排版整齊 */
+        }
+
+        .header-btn:hover {
+            background-color: rgba(255, 255, 255, 0.35);
         }
 
         /* --- Navigation (Mobile Bottom Bar) --- */
@@ -241,7 +275,7 @@
             border-right-color: rgba(255,255,255,0.2);
         }
 
-        /* 第一欄固定效果 */
+        /* 第一欄固定效果 (tbody) */
         .row-header {
             text-align: left;
             font-weight: bold;
@@ -255,8 +289,8 @@
             min-width: 130px;
         }
         
-        /* 標題列的第一格也要固定 */
-        thead th:first-child {
+        /* 修正：僅鎖定標題列的第一列第一格 (保障項目)，避免誤鎖定第二列的計畫一 */
+        thead tr:first-child th:first-child {
             position: sticky;
             left: 0;
             z-index: 30; /* 比一般 th 更高 */
@@ -270,11 +304,12 @@
             text-align: left;
             font-weight: bold;
             padding: 8px 12px;
-            /* Section header 也要 sticky */
+            /* 設定分類標題固定在左側 (Sticky) */
+            position: -webkit-sticky; /* 針對 iOS Safari 優化 */
             position: sticky;
             left: 0;
-            z-index: 9; 
-            width: 100%; /* 讓它看起來像蓋過後面 */
+            z-index: 15; /* 層級需高於 row-header (10) 以避免捲動時被遮擋或穿插 */
+            border-right: none; /* 移除右邊框讓視覺更連貫 */
         }
 
         /* --- Page 3: Calculator --- */
@@ -505,8 +540,18 @@
 <body>
 
 <header>
-    <h1>金平安PRO5 專案</h1>
-    <p>南山產物 | 旅行綜合保險</p>
+    <div>
+        <h1>金平安PRO5 專案</h1>
+        <p>南山產物 | 旅行綜合保險</p>
+    </div>
+    <div class="header-actions">
+        <a href="https://nsgi168.nanshangeneral.com.tw/pdf/%E9%87%91%E5%B9%B3%E5%AE%89%E5%B0%88%E6%A1%88_DM.pdf" target="_blank" class="header-btn">
+            <i class="fas fa-file-pdf"></i> 商品DM
+        </a>
+        <button class="header-btn" onclick="copyImage()">
+            <i class="fas fa-copy"></i> 複製保障
+        </button>
+    </div>
 </header>
 
 <!-- 頁面內容 -->
@@ -940,6 +985,42 @@
         const end = document.getElementById('endDate');
         if (start && !end.value) {
             end.value = start;
+        }
+    }
+
+    // --- 複製圖片到剪貼簿功能 ---
+    async function copyImage() {
+        const imageUrl = 'https://ckd38.github.io/work/Protection%20Summary.png';
+        
+        try {
+            // 提示使用者
+            const btn = document.querySelector('.header-btn[onclick="copyImage()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中';
+            
+            // 抓取圖片
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            
+            // 寫入剪貼簿
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    [blob.type]: blob
+                })
+            ]);
+            
+            alert('複製成功');
+            
+            // 復原按鈕
+            btn.innerHTML = originalText;
+            
+        } catch (err) {
+            console.error('Copy failed', err);
+            alert('複製失敗，請確認您的瀏覽器支援此功能。');
+            
+            // 復原按鈕
+            const btn = document.querySelector('.header-btn[onclick="copyImage()"]');
+            btn.innerHTML = '<i class="fas fa-copy"></i> 複製保障';
         }
     }
 
